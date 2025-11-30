@@ -45,17 +45,21 @@ Systematic-Multi-Factor-Portfolio-Optimisation-and-Backtesting-Simulator
 ```bash
 git clone https://github.com/nauxiuh/Systematic-Multi-Factor-Portfolio-Optimisation-and-Backtesting-Simulator
 cd Systematic-Multi-Factor-Portfolio-Optimisation-and-Backtesting-Simulator
+pip install --upgrade pip
 pip install -r requirements.txt
 ```
 
 ## Usage
-
-1. Run the Streamlit interface:
+1. Run Streamlit
 ```bash
+cd Systematic-Multi-Factor-Portfolio-Optimisation-and-Backtesting-Simulator
+git pull
 streamlit run app.py
 ```
-2. Enter a list of stock tickers (e.g., AAPL, MSFT, GOOGL, AMZN, META) and select how many top-ranked stocks to include.
-3. Click Run Simulation to download data, compute factor scores, build the portfolio, optimise weights, and generate a full backtest.
+2. Enter a list of stock tickers (e.g. AAPL, MSFT, GOOGL, AMZN, META).
+3. Choose how many top-ranked stocks to include.
+4. Adjust lookback, factor settings, and weighting method as desired.
+5. Click Run Simulation to download data, compute factor scores, build the portfolio, optimise weights, and generate a full backtest.
 
 
 
