@@ -2,6 +2,8 @@ import streamlit as st
 import yfinance as yf
 import pandas as pd
 import plotly.express as px
+from backtest import backtest, compute_optimal_weights
+
 
 from factors import calculate_factors
 from portfolio import build_factor_score, select_stocks
@@ -105,9 +107,16 @@ if st.button("Run Simulation"):
     st.subheader("Selected Portfolio:")
     st.write(selected)
 
-    # Backtest
-    st.write("Running backtest...")
-    ret, cumulative = backtest(price_df, selected)
+    # Compute optimal weights
+    st.write("Computing optimal weights...")
+    weights = compute_optimal_weights(price_df, selected)
+
+    st.subheader("Optimal Weights (Max Sharpe Ratio)")
+    st.write(weights)
+
+    # Backtest using optimal weights
+    ret, cumulative = backtest(price_df, selected, weights)
+
 
     # Plot cumulative return
     fig = px.line(cumulative, title="Cumulative Returns")
