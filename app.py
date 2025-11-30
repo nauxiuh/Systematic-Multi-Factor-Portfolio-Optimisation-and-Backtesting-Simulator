@@ -8,7 +8,7 @@ from portfolio import build_factor_score, select_stocks
 from backtest import backtest
 
 # --- App title ---
-st.title("📈 Systematic Factor Strategy Workbench")
+st.title("Systematic Factor Strategy Workbench")
 
 # --- User inputs ---
 tickers_input = st.text_input(
