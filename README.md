@@ -42,15 +42,15 @@ Systematic-Multi-Factor-Portfolio-Optimisation-and-Backtesting-Simulator
 ```
 
 ## Installation
+
 ```bash
 git clone https://github.com/nauxiuh/Systematic-Multi-Factor-Portfolio-Optimisation-and-Backtesting-Simulator
 cd Systematic-Multi-Factor-Portfolio-Optimisation-and-Backtesting-Simulator
-pip install --upgrade pip
 pip install -r requirements.txt
 ```
 
 ## Usage
-1. Run Streamlit
+1. Run the App locally
 ```bash
 cd Systematic-Multi-Factor-Portfolio-Optimisation-and-Backtesting-Simulator
 git pull
