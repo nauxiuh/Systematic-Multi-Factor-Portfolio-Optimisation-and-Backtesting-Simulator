@@ -2,22 +2,76 @@ import streamlit as st
 import yfinance as yf
 import pandas as pd
 import plotly.express as px
-from backtest import backtest, compute_optimal_weights
-
 
 from factors import calculate_factors
 from portfolio import build_factor_score, select_stocks
-from backtest import backtest
+from backtest import backtest, compute_optimal_weights
 
 # --- App title ---
-st.title("Systematic Factor Strategy Workbench")
+st.title("Systematic Multi-Factor Portfolio Optimisation Simulator")
 
 # --- User inputs ---
+
 tickers_input = st.text_input(
     "Enter tickers (comma-separated):",
     "AAPL,MSFT,GOOGL,AMZN,TSLA,META"
 )
-n_stocks = st.slider("Number of stocks to select:", 3, 20, 5)
+
+col_left, col_right = st.columns(2)
+
+with col_left:
+    # History length for prices
+    lookback_years = st.slider(
+        "Price history lookback (years):",
+        min_value=1,
+        max_value=10,
+        value=5,
+        help="Controls how many years of historical data are downloaded."
+    )
+
+    # Momentum lookback in months (converted to trading days)
+    mom_lookback_months = st.slider(
+        "Momentum lookback (months):",
+        min_value=3,
+        max_value=24,
+        value=12,
+        help="Lookback window for the momentum factor."
+    )
+
+with col_right:
+    # Volatility window in trading days
+    vol_window_days = st.slider(
+        "Volatility window (trading days):",
+        min_value=20,
+        max_value=252,
+        value=252,
+        help="Number of trading days used to estimate volatility."
+    )
+
+    # Weighting method
+    weighting_method = st.radio(
+        "Portfolio weighting method:",
+        ["Equal weight", "Optimal (max Sharpe)"]
+    )
+
+# Factor weights
+with st.expander("Advanced: factor weights"):
+    st.markdown("Adjust the relative importance of each factor (they will be normalised to sum to 1).")
+    mom_w = st.slider("Momentum weight", 0.0, 1.0, 0.33, 0.01)
+    vol_w = st.slider("Volatility weight", 0.0, 1.0, 0.33, 0.01)
+    size_w = st.slider("Size weight", 0.0, 1.0, 0.34, 0.01)
+
+    w_sum = mom_w + vol_w + size_w
+    if w_sum == 0:
+        factor_weights = {"momentum": 1/3, "volatility": 1/3, "size": 1/3}
+    else:
+        factor_weights = {
+            "momentum": mom_w / w_sum,
+            "volatility": vol_w / w_sum,
+            "size": size_w / w_sum,
+        }
+
+n_stocks = st.slider("Number of stocks to select:", 3, 30, 5)
 
 if st.button("Run Simulation"):
     # Clean tickers
@@ -27,37 +81,30 @@ if st.button("Run Simulation"):
         st.error("Please enter at least one valid ticker.")
         st.stop()
 
-    st.write("Loading data...")
-
-    # Explicitly set auto_adjust=True to avoid Adj Close issues
-    raw_data = yf.download(tickers, period="5y", auto_adjust=True)
+    st.write(f"Loading data for the past **{lookback_years}** years...")
+    raw_data = yf.download(tickers, period=f"{lookback_years}y", auto_adjust=True)
 
     if raw_data.empty:
         st.error("No data was downloaded. Please check your tickers or try again later.")
         st.stop()
 
-    # Handle both single-index and multi-index column formats from yfinance
+    # Handle single-index vs MultiIndex columns
     if isinstance(raw_data.columns, pd.MultiIndex):
-    # yfinance can return either (field, ticker) or (ticker, field)
         level0 = raw_data.columns.get_level_values(0)
         level1 = raw_data.columns.get_level_values(1)
 
         try:
             if "Close" in level0:
-                # case 1: ('Close', 'AAPL'), ('Close', 'AMZN'), ...
                 price_df = raw_data.xs("Close", level=0, axis=1)
             elif "Close" in level1:
-                # case 2: ('AAPL', 'Close'), ('AMZN', 'Close'), ...
                 price_df = raw_data.xs("Close", level=1, axis=1)
             else:
                 raise KeyError("Close not found in any column level")
-        except KeyError as e:
+        except KeyError:
             st.error("Could not find 'Close' prices in downloaded data. Please check your tickers.")
             st.write("Columns found:", list(raw_data.columns))
             st.stop()
-
     else:
-        # For a single ticker: columns like ['Open','High','Low','Close',...]
         if "Close" not in raw_data.columns:
             st.error("Downloaded data does not contain a 'Close' column.")
             st.write("Columns found:", list(raw_data.columns))
@@ -65,14 +112,13 @@ if st.button("Run Simulation"):
         close_series = raw_data["Close"]
         price_df = close_series.to_frame() if not isinstance(close_series, pd.DataFrame) else close_series
 
-    # Drop rows with missing prices
+    # Drop missing prices
     price_df = price_df.dropna(how="any")
-
     if price_df.empty:
         st.error("Price data is empty after dropping missing values. Try different tickers or period.")
         st.stop()
 
-    # Real market caps using price × shares outstanding
+    # --- REAL market caps using price × shares outstanding ---
     st.write("Fetching shares outstanding and computing market caps...")
     mcaps = {}
     for t in price_df.columns:
@@ -89,43 +135,52 @@ if st.button("Run Simulation"):
         except Exception as e:
             st.warning(f"Could not fetch full shares data for {t}: {e}. Using fallback market cap.")
             latest_price = float(price_df[t].iloc[-1])
-            mcaps[t] = latest_price * 1e9  # assume 1 billion shares as a rough placeholder
+            mcaps[t] = latest_price * 1e9  # fallback
 
     market_caps = pd.Series(mcaps, index=price_df.columns)
 
-    # Calculate factors
+    # --- Factor calculation with user lookbacks ---
     st.write("Calculating factors...")
-    factors = calculate_factors(price_df, market_caps)
+    mom_lookback_days = int(mom_lookback_months * 21)  # approx 21 trading days per month
+    factors = calculate_factors(
+        price_df,
+        market_caps,
+        mom_lookback_days=mom_lookback_days,
+        vol_window_days=vol_window_days
+    )
     st.subheader("Factor Values")
     st.dataframe(factors)
 
-    # Build scores
-    scores = build_factor_score(factors)
+    # --- Build scores with user factor weights ---
+    scores = build_factor_score(factors, weights=factor_weights)
 
-    # Select portfolio
+    # --- Select portfolio ---
     selected = select_stocks(scores, n=n_stocks)
     st.subheader("Selected Portfolio:")
     st.write(selected)
 
-    # Compute optimal weights
-    st.write("Computing optimal weights...")
-    weights = compute_optimal_weights(price_df, selected)
+    # --- Portfolio weighting / backtest ---
+    if weighting_method == "Equal weight":
+        st.write("Using equal-weight portfolio...")
+        weights = None
+    else:
+        st.write("Computing optimal weights (max Sharpe)...")
+        weights = compute_optimal_weights(price_df, selected)
+        st.subheader("Optimal Weights")
+        st.write(weights)
 
-    st.subheader("Optimal Weights (Max Sharpe Ratio)")
-    st.write(weights)
-
-    # Backtest using optimal weights
+    st.write("Running backtest...")
     ret, cumulative = backtest(price_df, selected, weights)
-
 
     # Plot cumulative return
     fig = px.line(cumulative, title="Cumulative Returns")
     st.plotly_chart(fig)
 
+    # Performance stats (daily-based)
     st.subheader("Performance Stats")
     total_return = cumulative.iloc[-1] - 1
-    ann_vol = ret.std() * (12 ** 0.5)
-    sharpe = (ret.mean() / ret.std() * (12 ** 0.5)) if ret.std() != 0 else float("nan")
+    ann_vol = ret.std() * (252 ** 0.5)
+    sharpe = (ret.mean() / ret.std() * (252 ** 0.5)) if ret.std() != 0 else float("nan")
 
     st.write(f"Total return: {total_return:.2%}")
     st.write(f"Annual volatility: {ann_vol:.2%}")
