@@ -33,7 +33,7 @@ The top-ranked names are selected into a portfolio and can be tested using eithe
 
 ## Project Structure
 ```
-Systematic Multi-Factor Portfolio Optimisation and Backtesting Simulator
+Systematic-Multi-Factor-Portfolio-Optimisation-and-Backtesting-Simulator
 ├── app.py
 ├── factors.py
 ├── portfolio.py
@@ -43,8 +43,8 @@ Systematic Multi-Factor Portfolio Optimisation and Backtesting Simulator
 
 ## Installation
 ```bash
-git clone https://github.com/nauxiuh/Systematic Multi-Factor Portfolio Optimisation and Backtesting Simulator
-cd Systematic Multi-Factor Portfolio Optimisation and Backtesting Simulator
+git clone https://github.com/nauxiuh/Systematic-Multi-Factor-Portfolio-Optimisation-and-Backtesting-Simulator
+cd Systematic-Multi-Factor-Portfolio-Optimisation-and-Backtesting-Simulator
 pip install -r requirements.txt
 ```
 
