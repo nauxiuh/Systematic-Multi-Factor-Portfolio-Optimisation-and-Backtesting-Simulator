@@ -45,7 +45,7 @@ factor_simulator
 ## Installation
 ```bash
 git clone https://github.com/nauxiuh/Simulator-for-Factor-Based-Stock-Selection-and-Portfolio-Backtesting
-cd factor_simulator
+cd Simulator-for-Factor-Based-Stock-Selection-and-Portfolio-Backtesting
 pip install -r requirements.txt
 ```
 
