@@ -36,13 +36,24 @@ if st.button("Run Simulation"):
 
     # Handle both single-index and multi-index column formats from yfinance
     if isinstance(raw_data.columns, pd.MultiIndex):
-        # For multiple tickers: columns like (ticker, field)
+    # yfinance can return either (field, ticker) or (ticker, field)
+        level0 = raw_data.columns.get_level_values(0)
+        level1 = raw_data.columns.get_level_values(1)
+
         try:
-            price_df = raw_data.xs("Close", level=1, axis=1)
-        except KeyError:
+            if "Close" in level0:
+                # case 1: ('Close', 'AAPL'), ('Close', 'AMZN'), ...
+                price_df = raw_data.xs("Close", level=0, axis=1)
+            elif "Close" in level1:
+                # case 2: ('AAPL', 'Close'), ('AMZN', 'Close'), ...
+                price_df = raw_data.xs("Close", level=1, axis=1)
+            else:
+                raise KeyError("Close not found in any column level")
+        except KeyError as e:
             st.error("Could not find 'Close' prices in downloaded data. Please check your tickers.")
             st.write("Columns found:", list(raw_data.columns))
             st.stop()
+
     else:
         # For a single ticker: columns like ['Open','High','Low','Close',...]
         if "Close" not in raw_data.columns:
