@@ -43,8 +43,8 @@ factor_simulator
 
 ## Installation
 ```bash
-git clone https://github.com/nauxiuh/Simulator-for-Factor-Based-Stock-Selection-and-Portfolio-Backtesting
-cd Simulator-for-Factor-Based-Stock-Selection-and-Portfolio-Backtesting
+git clone https://github.com/nauxiuh/Systematic Multi-Factor Portfolio Optimisation and Backtesting Simulator
+cd Systematic Multi-Factor Portfolio Optimisation and Backtesting Simulator
 pip install -r requirements.txt
 ```
 
