@@ -42,7 +42,7 @@ Systematic-Multi-Factor-Portfolio-Optimisation-and-Backtesting-Simulator
 ```
 
 ## Installation
-
+Copy and paste into terminal:
 ```bash
 git clone https://github.com/nauxiuh/Systematic-Multi-Factor-Portfolio-Optimisation-and-Backtesting-Simulator
 cd Systematic-Multi-Factor-Portfolio-Optimisation-and-Backtesting-Simulator
@@ -50,7 +50,7 @@ pip install -r requirements.txt
 ```
 
 ## Usage
-1. Run the App locally
+1. Copy and paste into terminal:
 ```bash
 cd Systematic-Multi-Factor-Portfolio-Optimisation-and-Backtesting-Simulator
 git pull
